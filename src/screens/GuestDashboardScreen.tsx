@@ -1,3 +1,4 @@
+import React from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { BookOpen, Shield, ArrowRight, UserPlus, ArrowUpRight, ArrowDownLeft, QrCode, Receipt, Wallet } from 'lucide-react';
 

@@ -99,10 +99,21 @@ export const appStates: AppStateDef[] = [
     messageType: 'Explicit',
     riskLevel: 'Low'
   },
+  // STEP 1 - CONSENT
+  {
+    id: 'step_1_default',
+    name: 'Default',
+    screenId: 'STEP_1_CONSENT',
+    reason: 'Initial load of consent screen',
+    systemAction: 'Display consent forms checked by default',
+    userNextSteps: 'Tap Agree to proceed',
+    messageType: 'Neutral',
+    riskLevel: 'None'
+  },
   {
     id: 'consent_declined',
     name: 'Consent Declined',
-    screenId: 'WELCOME',
+    screenId: 'STEP_1_CONSENT',
     gate: 'Pre-G1',
     reason: 'User declined consent',
     systemAction: 'Agree button disabled',

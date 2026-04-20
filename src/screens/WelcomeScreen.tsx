@@ -1,13 +1,30 @@
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { ShieldAlert, AlertTriangle } from 'lucide-react';
 
 export function WelcomeScreen() {
   const { currentScreen, currentStateId, setScreen } = useAppStore();
 
+  const [termsChecked, setTermsChecked] = useState(true);
+  const [kycChecked, setKycChecked] = useState(true);
+
   const isErrorState = ['vpn_detected', 'emulator_detected', 'root_jailbreak', 'session_hijack'].includes(currentStateId);
   const isPermissionDenied = currentStateId === 'permission_denied';
   const isConsentDeclined = currentStateId === 'consent_declined';
+  const isStep1Default = currentStateId === 'step_1_default';
   const isStep1 = currentScreen === 'STEP_1_CONSENT';
+
+  useEffect(() => {
+    if (isStep1Default) {
+      setTermsChecked(true);
+      setKycChecked(true);
+    } else if (isConsentDeclined) {
+      setTermsChecked(false);
+      setKycChecked(false);
+    }
+  }, [isStep1Default, isConsentDeclined]);
+
+  const isActionDisabled = !termsChecked || !kycChecked || isPermissionDenied || isErrorState;
 
   if (isErrorState) {
     return (
@@ -42,15 +59,36 @@ export function WelcomeScreen() {
 
         {isStep1 ? (
           <>
+            {(isPermissionDenied || isConsentDeclined) && (
+              <div className="mb-6 p-4 bg-orange-50 border border-orange-100 rounded-2xl flex gap-3 text-right">
+                <AlertTriangle className="w-5 h-5 text-brand-amber shrink-0" />
+                <p className="text-sm text-orange-800 font-medium leading-relaxed">
+                  {isPermissionDenied 
+                    ? 'التطبيق يحتاج للوصول للكاميرا والموقع الجغرافي لإتمام التحقق.'
+                    : 'يجب الموافقة على الشروط والأحكام للمتابعة.'}
+                </p>
+              </div>
+            )}
+
             <div className="space-y-4 mb-6 text-sm text-neutral-700">
-              <label className="flex items-start gap-3">
-                <input type="checkbox" className="mt-1 w-5 h-5 rounded border-neutral-300 text-brand-amber focus:ring-brand-amber" />
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={termsChecked} 
+                  onChange={(e) => setTermsChecked(e.target.checked)}
+                  className="mt-1 w-5 h-5 rounded border-neutral-300 text-brand-amber focus:ring-brand-amber cursor-pointer" 
+                />
                 <span className="leading-relaxed">
                   أوافق على <a href="#" className="text-brand-red font-medium">الشروط والأحكام</a> و <a href="#" className="text-brand-red font-medium">سياسة الخصوصية</a>
                 </span>
               </label>
-              <label className="flex items-start gap-3">
-                <input type="checkbox" className="mt-1 w-5 h-5 rounded border-neutral-300 text-brand-amber focus:ring-brand-amber" />
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={kycChecked} 
+                  onChange={(e) => setKycChecked(e.target.checked)}
+                  className="mt-1 w-5 h-5 rounded border-neutral-300 text-brand-amber focus:ring-brand-amber cursor-pointer" 
+                />
                 <span className="leading-relaxed">
                   أوافق على معالجة بياناتي لأغراض التحقق من الهوية (KYC)
                 </span>
@@ -60,7 +98,7 @@ export function WelcomeScreen() {
             <div className="space-y-3">
               <button 
                 onClick={() => setScreen('STEP_2_PHONE')}
-                disabled={isConsentDeclined}
+                disabled={isActionDisabled}
                 className="w-full py-4 rounded-[20px] bg-brand-gradient text-white font-bold shadow-brand-medium disabled:opacity-50 disabled:shadow-none transition-all active:scale-[0.98]"
               >
                 موافق والمتابعة

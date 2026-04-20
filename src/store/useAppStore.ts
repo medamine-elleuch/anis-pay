@@ -22,6 +22,7 @@ export const useAppStore = create<AppState>((set) => ({
 function getDefaultStateForScreen(screen: ScreenId): string {
   switch (screen) {
     case 'WELCOME': return 'welcome_default';
+    case 'STEP_1_CONSENT': return 'step_1_default';
     case 'STEP_2_PHONE': return 'phone_default';
     case 'STEP_3_OTP': return 'otp_default';
     case 'STEP_4_NID': return 'nid_default';

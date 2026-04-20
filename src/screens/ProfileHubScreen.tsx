@@ -1,3 +1,4 @@
+import React from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { User, Phone, Mail, Lock, Smartphone, ChevronLeft } from 'lucide-react';
 

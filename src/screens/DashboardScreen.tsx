@@ -1,3 +1,4 @@
+import React from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { ShieldAlert, Wallet, ArrowUpRight, ArrowDownLeft, QrCode, Receipt, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
 import clsx from 'clsx';
