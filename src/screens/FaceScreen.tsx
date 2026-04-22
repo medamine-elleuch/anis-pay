@@ -1,13 +1,15 @@
+import React, { useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { AlertCircle, ShieldAlert, ScanFace, RefreshCcw } from 'lucide-react';
+import { AlertCircle, ShieldAlert, ScanFace, CheckCircle2 } from 'lucide-react';
 import clsx from 'clsx';
 
 export function FaceScreen() {
-  const { currentStateId, setScreen } = useAppStore();
+  const { currentStateId, setScreen, setStateId } = useAppStore();
 
-  const isBlocked = ['spoof_detected'].includes(currentStateId);
+  const isBlocked = ['spoof_detected', 'passive_spoof_detected'].includes(currentStateId);
   const isSoftBlock = currentStateId === 'soft_block_3_fails';
   const isStale = currentStateId === 'stale_record';
+  const isCaptured = currentStateId === 's6_facial_captured';
   
   const errorMessages: Record<string, string> = {
     'no_face': 'لم يتم العثور على وجه، يرجى وضع وجهك داخل الإطار.',
@@ -16,9 +18,28 @@ export function FaceScreen() {
     'glare_reflection': 'يوجد انعكاس ضوء، يرجى التصوير في مكان بإضاءة هادئة.',
     'low_luminance': 'الإضاءة غير كافية، يرجى التصوير في مكان مضاء جيداً.',
     'multiple_faces': 'يجب أن يكون شخص واحد فقط أمام الكاميرا.',
+    'unstable_burst': 'يرجى إبقاء وجهك ثابتاً داخل الإطار للحظة قصيرة.',
   };
 
   const currentError = errorMessages[currentStateId];
+
+  // Auto-capture simulation for stable alignment (Default state)
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (currentStateId === 'face_default') {
+      timer = setTimeout(() => {
+        setStateId('s6_facial_captured');
+      }, 3500);
+    }
+    return () => clearTimeout(timer);
+  }, [currentStateId, setStateId]);
+
+  // Hidden manual trigger for dev/mock logic
+  const handleHiddenTrigger = () => {
+    if (currentStateId === 'face_default') {
+      setStateId('s6_facial_captured');
+    }
+  };
 
   if (isBlocked) {
     return (
@@ -44,6 +65,26 @@ export function FaceScreen() {
     );
   }
 
+  // Simulate automatic routing or success state
+  if (isCaptured) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-6 bg-neutral-950 text-center">
+        <CheckCircle2 className="w-20 h-20 text-semantic-success mb-6" />
+        <h2 className="text-xl font-bold text-white mb-2">اكتمل الالتقاط بنجاح</h2>
+        <p className="text-sm text-neutral-400 mb-8">تم حفظ الصورة المرجعية بأمان.</p>
+        <button 
+          onClick={() => setScreen('STEP_7A_PASSPORT')}
+          className="px-8 py-3 bg-white text-neutral-950 font-bold rounded-xl shadow-brand-soft"
+        >
+          المتابعة للخطوة التالية
+        </button>
+      </div>
+    );
+  }
+
+  // Add subtle pulse to the guide when stable to implicitly suggest scanning
+  const isStable = currentStateId === 'face_default';
+
   return (
     <div className="h-full flex flex-col bg-neutral-950 relative overflow-hidden">
       {/* Camera Viewport Mock */}
@@ -56,16 +97,19 @@ export function FaceScreen() {
         <div className="text-center mb-10">
           <h1 className="text-2xl font-bold text-white mb-2">التقاط صورة الوجه</h1>
           <p className="text-sm text-neutral-300">
-            {isStale ? 'يرجى إعادة التقاط صورتك لتحديث السجل البيومتري.' : 'يرجى وضع وجهك داخل الإطار المخصص'}
+            {isStale ? 'يرجى إعادة التقاط صورتك لتحديث السجل البيومتري.' : 'يرجى إبقاء وجهك ثابتاً داخل الإطار للالتقاط التلقائي'}
           </p>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center">
-          {/* Face Guide */}
-          <div className={clsx(
-            "w-64 h-80 rounded-[100px] border-4 transition-all duration-300 relative",
-            currentError ? "border-semantic-error" : "border-brand-gold"
-          )}>
+          {/* Face Guide - Biometric Anchor format */}
+          <div 
+            onClick={handleHiddenTrigger}
+            className={clsx(
+              "w-64 h-80 rounded-[100px] border-4 transition-all duration-300 relative cursor-pointer",
+              currentError ? "border-semantic-error" : "border-brand-gold",
+              isStable && "animate-pulse"
+            )}>
             {/* Corner markers */}
             <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-[100px]"></div>
             <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-[100px]"></div>
@@ -79,18 +123,16 @@ export function FaceScreen() {
               <p className="text-sm text-white font-medium text-right">{currentError}</p>
             </div>
           )}
+          {!currentError && (
+             <div className="mt-8 px-4 py-3 bg-neutral-800/60 backdrop-blur-md border border-neutral-700 rounded-2xl flex items-center justify-center">
+               <p className="text-xs text-neutral-400">بدون حركات — سيتم التقاط سلسلة صور تلقائياً عند الثبات.</p>
+             </div>
+          )}
         </div>
-
-        <div className="mt-auto pb-8 flex justify-center">
-          <button 
-            onClick={() => setScreen('STEP_7A_PASSPORT')}
-            className={clsx(
-              "w-20 h-20 rounded-full flex items-center justify-center transition-all",
-              currentError ? "bg-neutral-800 text-neutral-500" : "bg-white text-neutral-950 shadow-[0_0_0_4px_rgba(255,255,255,0.2)]"
-            )}
-          >
-            <ScanFace className="w-8 h-8" />
-          </button>
+        
+        {/* Placeholder to keep layout spacing without visible CTA */}
+        <div className="mt-auto pb-8 h-20 flex justify-center items-end opacity-20">
+             <ScanFace className="w-6 h-6 text-white/50" />
         </div>
       </div>
     </div>
